@@ -29,9 +29,11 @@ public:
 
     void read_matrix(void);
     void display_matrix(void);
+    Matrix transpose();
     void rank(void);
     double determinant();
     Matrix inverse();
+    Matrix multiply(Matrix);
 
 };   
 
@@ -60,6 +62,19 @@ void Matrix::display_matrix()
     cout<<endl;
 }
 
+Matrix Matrix::transpose()
+{
+    Matrix result(rows, cols);
+    int i, j;
+    for(i = 0; i < rows; i++)
+    {
+        for(j = 0; j < cols; j++)
+        {
+            result.mat[i][j]  = this->mat[j][i] ;
+        }
+    }
+    return result;
+}
 void Matrix::rank()
 {
 
@@ -142,8 +157,29 @@ Matrix Matrix::inverse()
 
         }
     }
-    return inv;
+    return inv.transpose();
 }
+
+Matrix Matrix::multiply(Matrix other)
+{
+    if(cols != other.rows) { cout<< " Invalid dimensions !"; return *this;}
+
+    Matrix product(this-> rows, other.cols);
+    int i, j, k;
+
+    for(i = 0; i < this-> rows; i++)
+    {
+        for(j = 0; j < other.cols; j++)
+        {
+            for(k = 0; k < this-> cols; k++)
+            {
+                product.mat[i][j] += this->mat[i][k] * other.mat[k][j];
+            }
+        }
+    }
+    return product;
+}
+
 int main()
 {
     int vars, eqs;
@@ -165,8 +201,8 @@ int main()
     cout <<"Matrix b"<<endl;
     b.display_matrix();
     cout<<"Det of A is "<<A.determinant()<<endl;
-    cout << " Inverse is "<< endl;
-    A.inverse().display_matrix();
+    cout << " Inverse * Self is "<< endl;
+    A.inverse().multiply(A).display_matrix();
 
     return 0;
 }
