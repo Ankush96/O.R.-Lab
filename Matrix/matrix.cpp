@@ -1,6 +1,7 @@
 #include <iostream>
 #include <stdio.h>
 #include <vector>
+#include <math.h>
 
 using namespace std;
 
@@ -30,6 +31,7 @@ public:
     void display_matrix(void);
     void rank(void);
     double determinant();
+    Matrix inverse();
 
 };   
 
@@ -97,7 +99,51 @@ double Matrix::determinant()
     return det;
 }
 
+Matrix Matrix::inverse()
+{
+    double det = this->determinant();
 
+    if( fabs(det) < 0.01)
+    {
+        cout << "Matrix is not invertible!" << endl;
+    }
+
+    int i,j, q, p, sign, r, s;
+    double cofdet;
+    Matrix inv( rows, cols);
+    Matrix cof( rows - 1, cols - 1);
+
+    for(i = 0; i < rows; i++)
+    {
+        for(j = 0; j < cols; j++)
+        {
+            sign = ((i+j)%2 ? -1 : 1);
+            r = 0, s = 0;
+            for(p = 0; p < rows; p++)
+            {
+                for(q = 0; q < cols; q++)
+                {
+                    if(p != i && q != j)
+                    {
+                        cof.mat[r][s] = mat[p][q];
+                        s++;
+                        if(s > cols-2)
+                            {
+                                r++;
+                                s = 0;
+                            }
+                    }
+                }
+            }
+            cofdet = cof.determinant();
+
+            inv.mat[i][j] = (fabs(cofdet) < 0.1 ? 0 : sign) * cofdet / det;
+
+
+        }
+    }
+    return inv;
+}
 int main()
 {
     int vars, eqs;
@@ -119,6 +165,8 @@ int main()
     cout <<"Matrix b"<<endl;
     b.display_matrix();
     cout<<"Det of A is "<<A.determinant()<<endl;
+    cout << " Inverse is "<< endl;
+    A.inverse().display_matrix();
 
     return 0;
 }
