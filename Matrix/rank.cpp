@@ -2,9 +2,9 @@
 
 void readA (double A[][10],int[]); 	 				//function to read a A
 void printA (double A[][10],int n[]);	 			//function to nrint a A
-void update_initzeros(int initzeros[],double A[][10],int n[]);	//function to update the initzeros array
-void arrange_A(double A[][10],int n[],int initzeros[]);		//function to arrange A
-void scale_A(double A[][10],int n[],int initzeros[]);		//Function to scale A
+void update_leading_0s(int leading_0s[],double A[][10],int n[]);	//function to update the leading_0s array
+void arrange_A(double A[][10],int n[],int leading_0s[]);		//function to arrange A
+void scale_A(double A[][10],int n[],int leading_0s[]);		//Function to scale A
 
 //----------------------------------------------------------------
 //                  main function                                 
@@ -15,20 +15,20 @@ main()
 
 //nrogram to take a matrix as innut and find its rank.
 //x and y are rows and columns
-int n[2],i,retest=1,grp,p,r,j,initzeros[10],t,m,rank;
+int n[2],i,retest=1,grp,p,r,j,leading_0s[10],t,m,rank;
 double A[10][10];
 readA(A,n);
 
 printf("\tThe A you have entered is shown below\n\n");
 printA(A,n);
-update_initzeros(initzeros,A,n);
-arrange_A(A,n,initzeros);
+update_leading_0s(leading_0s,A,n);
+arrange_A(A,n,leading_0s);
 if(A[0][0]==0)
 {
 printf("\n\tError: Invalid marix \n\n");
 }
-update_initzeros(initzeros,A,n);
-scale_A(A,n,initzeros);
+update_leading_0s(leading_0s,A,n);
+scale_A(A,n,leading_0s);
 while(retest==1)
 {
 	grp=0;
@@ -36,7 +36,7 @@ while(retest==1)
 	{
 
 		p=0;
-		while(initzeros[i+p]==initzeros[i+p+1]&&(i+p+1)<n[0])
+		while(leading_0s[i+p]==leading_0s[i+p+1]&&(i+p+1)<n[0])
 		{
 
 			grp=grp+1;
@@ -57,16 +57,16 @@ while(retest==1)
 			}
 		}	
 
-	update_initzeros(initzeros,A,n);
-	arrange_A(A,n,initzeros);
-	update_initzeros(initzeros,A,n);
-	scale_A(A,n,initzeros);
+	update_leading_0s(leading_0s,A,n);
+	arrange_A(A,n,leading_0s);
+	update_leading_0s(leading_0s,A,n);
+	scale_A(A,n,leading_0s);
 	retest=0;
 	for(r=0;r<n[0];++r)
 	{
-		if(initzeros[r]==initzeros[r+1]&&r+1<n[0])
+		if(leading_0s[r]==leading_0s[r+1]&&r+1<n[0])
 		{
-			if(initzeros[r]!=n[1])
+			if(leading_0s[r]!=n[1])
 			retest=1;
 		}
 	}
@@ -75,7 +75,7 @@ while(retest==1)
 rank =0;
 for (i=0;i<n[0];++i)
 {
-	if (initzeros[i]!=n[1])
+	if (leading_0s[i]!=n[1])
 	{
 		++rank;
 	}
@@ -136,10 +136,10 @@ printf("\n");
 
 
 //------------------------------------------------------------------
-//               Function definition to update initzeros array                   
+//               Function definition to update leading_0s array                   
 //-----------------------------------------------------------------
 
-void update_initzeros ( int initzeros[],double A[][10],int n[])
+void update_leading_0s ( int leading_0s[],double A[][10],int n[])
 {
 
 int zcount,i,j; 
@@ -150,7 +150,7 @@ for(j=0; (A[i][j]==0) && (j<n[1]) ;++j)
 {
 ++zcount;
 }
-initzeros[i]=zcount;
+leading_0s[i]=zcount;
 }
 
 }
@@ -160,7 +160,7 @@ initzeros[i]=zcount;
 //               Function definition to arrange A              
 //-------------------------------------------------------------------
 
-void arrange_A(double A[][10],int n[],int initzeros[])
+void arrange_A(double A[][10],int n[],int leading_0s[])
 {
 int l,remrow,i,k,lastrow,temnvar,large;
 double rowtemn[10];
@@ -168,18 +168,18 @@ lastrow=n[0]-1;
 
 for(l=0;l<n[0];++l)
 {
-large=initzeros[0];
+large=leading_0s[0];
 for(i=0;i<n[0];++i)
 {
-if(large<=initzeros[i])
+if(large<=leading_0s[i])
 {
-large=initzeros[i];
+large=leading_0s[i];
 remrow=i;
 }
 }
 
-initzeros[remrow]=initzeros[lastrow];
-initzeros[lastrow]=-1;
+leading_0s[remrow]=leading_0s[lastrow];
+leading_0s[lastrow]=-1;
 
 for(k=0;k<n[1];++k)
 {
@@ -202,15 +202,15 @@ lastrow=lastrow-1;
 //---------------------------------------------------------------------------
 
 
-void scale_A(double A[][10],int n[],int initzeros[])
+void scale_A(double A[][10],int n[],int leading_0s[])
 {
 int i,j;
 double divisor;
 for(i=0;i<n[0];++i)
 {  
-divisor=A[i][initzeros[i]];
+divisor=A[i][leading_0s[i]];
 
-for(j=initzeros[i];j<n[1];++j)
+for(j=leading_0s[i];j<n[1];++j)
 {
 A[i][j]=A[i][j]/divisor;
 }

@@ -11,10 +11,13 @@ public:
     void display_matrix(void);
     Matrix copy();
     Matrix transpose();
-    void rank(void);
+    int rank(void);
     double determinant();
     Matrix inverse();
     Matrix multiply(Matrix);
     Matrix readjust();
+    void scale_A(int *, Matrix);
+    void pivot_rearrange(int *, Matrix);
+    void update_leading_0s(int *, Matrix);
 
 }; 

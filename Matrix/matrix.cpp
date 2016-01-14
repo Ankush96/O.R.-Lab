@@ -5,6 +5,10 @@
 
 using namespace std;
 
+
+//------------------------------------------------------------------
+//           Constructor for the matrix class             
+//-----------------------------------------------------------------
 Matrix::Matrix(int a=0, int b=0)
 {
     rows = a;
@@ -19,6 +23,10 @@ Matrix::Matrix(int a=0, int b=0)
         }
     }
 }
+
+//------------------------------------------------------------------
+//           Function to read a matrix             
+//-----------------------------------------------------------------
 void Matrix::read_matrix()
 {
     for(int i = 0; i < rows; i++)
@@ -27,10 +35,12 @@ void Matrix::read_matrix()
         {
             cin>>mat[i][j];
         }
-        cout<<" Next row "<<endl;
     }
 }
 
+//------------------------------------------------------------------
+//           Function to display a matrix             
+//-----------------------------------------------------------------
 void Matrix::display_matrix()
 {
     for(int i = 0; i < rows; i++)
@@ -44,6 +54,9 @@ void Matrix::display_matrix()
     cout<<endl;
 }
 
+//------------------------------------------------------------------
+//           Function to perform deep copy of matrix             
+//-----------------------------------------------------------------
 Matrix Matrix::copy()
 {
     int i,j;
@@ -55,24 +68,154 @@ Matrix Matrix::copy()
     return clone;
 }
 
+//------------------------------------------------------------------
+//           Function to find transpose of a matrix             
+//-----------------------------------------------------------------
 Matrix Matrix::transpose()
 {
-    Matrix result(rows, cols);
+    Matrix result(cols, rows);
     int i, j;
     for(i = 0; i < rows; i++)
     {
         for(j = 0; j < cols; j++)
         {
-            result.mat[i][j]  = this->mat[j][i] ;
+            result.mat[j][i]  = this->mat[i][j] ;
         }
     }
     return result;
 }
-void Matrix::rank()
-{
 
+//------------------------------------------------------------------
+//           Function to find the first non-zero element              
+//-----------------------------------------------------------------
+void Matrix::update_leading_0s(int *leading_0s, Matrix a)
+{
+    int i, j; 
+    for(i = 0; i < a.rows; ++i)
+    {
+        leading_0s[i] = 0;
+        for(j=0; (fabs(a.mat[i][j]) < 0.00001) && (j < a.cols) ;++j) leading_0s[i]++;
+    }
 }
 
+
+//-------------------------------------------------------------------
+// Function to rearrange arrange A such that pivot positions have 1               
+//-------------------------------------------------------------------
+void Matrix::pivot_rearrange(int *leading_0s, Matrix a)
+{
+    int l, remrow, i, k, lastrow, large;
+    double *rowtemn = new double[a.cols];
+    lastrow = rows-1;
+
+    for(l = 0; l < a.rows; ++l)
+    {
+        large = leading_0s[0];
+        for(i = 0; i < a.rows; ++i)
+        {
+            if( large <= leading_0s[i])
+            {
+                large=leading_0s[i];
+                remrow=i;
+            }
+        }
+
+    leading_0s[remrow] = leading_0s[lastrow];
+    leading_0s[lastrow] = -1;
+
+    for(k = 0; k < a.cols; ++k)   rowtemn[k] = a.mat[lastrow][k];
+    for(k = 0; k < a.cols; ++k)   a.mat[lastrow][k] = a.mat[remrow][k];
+    for(k = 0; k < a.cols; ++k)   a.mat[remrow][k] = rowtemn[k];
+ 
+    lastrow--;
+    }
+}
+
+//---------------------------------------------------------------------------
+//           Function definition to scale a A                              
+//---------------------------------------------------------------------------
+void Matrix::scale_A(int *leading_0s, Matrix a)
+{
+    int i,j;
+    double divisor;
+    for(i = 0; i < a.rows; ++i)
+    {  
+        divisor = a.mat[i][leading_0s[i]];
+        for(j = leading_0s[i]; j < a.cols; ++j)   a.mat[i][j] = a.mat[i][j]/ divisor;
+    }
+}
+
+//------------------------------------------------------------------
+//           Function to find trank of a matrix             
+//-----------------------------------------------------------------
+int Matrix::rank()
+{
+    Matrix a = this->copy();
+    int i, next_row = 1, grp, p, r, j, *leading_0s, t, m, rank;
+    leading_0s = new int[a.rows];
+
+    update_leading_0s(leading_0s, a);
+    pivot_rearrange(leading_0s, a);
+
+    if(fabs(a.mat[0][0]) < 0.00001)
+    {
+        cout << "Not a valid matrix as pivot element is 0" << endl;
+        return -1; 
+    }
+
+    update_leading_0s(leading_0s, a);
+    scale_A(leading_0s, a);
+
+    while(next_row == 1)
+    {
+        grp = 0;
+        for( i = 0; i < rows; ++i)
+        {
+            p = 0;
+            while(leading_0s[i+p] == leading_0s[i+p+1] && (i+p+1) < a.rows)
+            {
+                grp++;
+                p++;
+            }
+
+            if(grp != 0)
+            {
+                while(grp != 0)
+                {
+                    for(j = 0; j < a.cols; ++j) a.mat[i+grp][j] = a.mat[i+grp][j] - a.mat[i][j];
+                    grp--;
+                }
+                break;
+                }
+            }   
+
+        update_leading_0s(leading_0s, a);
+        pivot_rearrange(leading_0s, a);
+        update_leading_0s(leading_0s, a);
+        scale_A(leading_0s, a);
+
+        next_row=0;
+
+        for(r = 0; r < a.rows ; ++r)
+        {
+            if(leading_0s[r] == leading_0s[r+1] && r+1 < a.rows)
+            {
+                if(leading_0s[r] != a.cols) next_row = 1;
+            }
+        }
+
+    }
+    rank = 0;
+    for (i = 0; i < a.rows; ++i)
+    {
+        if (leading_0s[i] != a.cols)  ++rank;
+    }
+    return rank;
+}
+
+//------------------------------------------------------------------
+//           Function to find the determinant              
+//-----------------------------------------------------------------
 double Matrix::determinant()
 {
 
@@ -107,6 +250,9 @@ double Matrix::determinant()
     return det;
 }
 
+//------------------------------------------------------------------
+//           Function to find the inverse              
+//-----------------------------------------------------------------
 Matrix Matrix::inverse()
 {
     double det = this->determinant();
@@ -153,6 +299,9 @@ Matrix Matrix::inverse()
     return inv.transpose();
 }
 
+//------------------------------------------------------------------
+//           Function to multiply 2 matrices             
+//-----------------------------------------------------------------
 Matrix Matrix::multiply(Matrix other)
 {
     if(cols != other.rows) { cout<< " Invalid dimensions !"; return *this;}
@@ -173,6 +322,9 @@ Matrix Matrix::multiply(Matrix other)
     return product;
 }
 
+//------------------------------------------------------------------
+//           Function to truncate extremely small float values to 0             
+//------------------------------------------------------------------
 Matrix Matrix::readjust()
 {
     for(int i = 0; i < rows; i++)

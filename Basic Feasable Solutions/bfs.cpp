@@ -8,19 +8,20 @@ using namespace std;
 
 int count = 0;
 
+//------------------------------------------------------------------
+//           Function to find the factorial of a number              
+//-----------------------------------------------------------------
 int factorial(int n)
 {
 	if(n == 0 || n == 1) return 1;
 	return n * factorial(n-1);
 }
 
-/* arr[]  ---> Input Array
-   data[] ---> Temporary array to store current combination
-   start & end ---> Staring and Ending indexes in arr[]
-   index  ---> Current index in data[]
-   r ---> Size of a combination to be printed */
-void combination(int *arr, int *data, int start, int end,
-                     int index, int r, int **comb)
+
+//------------------------------------------------------------------
+//           Function to find al nCr combinations             
+//-----------------------------------------------------------------
+void combination(int *arr, int *data, int start, int end, int index, int r, int **comb)
 {
     // Current combination is ready to be printed, print it
     if (index == r)
@@ -43,6 +44,9 @@ void combination(int *arr, int *data, int start, int end,
     }
 }
 
+//------------------------------------------------------------------
+//           Function to solve a system of equations of form AX =b             
+//-----------------------------------------------------------------
 Matrix solve(Matrix A, Matrix b, int vars, int eqs, int *zeros)
 {
 	Matrix a = A.copy();
@@ -58,7 +62,13 @@ Matrix solve(Matrix A, Matrix b, int vars, int eqs, int *zeros)
 		return res;	
 	}
 }
-void find_optimum(Matrix A, Matrix b, int **combinations, int vars, int eqs, int sols, Matrix Z)
+
+//------------------------------------------------------------------
+//           Function to find all solutions and then eliminate
+//			 all non-feasible solutions and to finally obtain 
+//			 Basic Feasible solutions and find optimal solution             
+//-----------------------------------------------------------------
+void find_optimum(Matrix A, Matrix b, int **combinations, int vars, int eqs, int sols, Matrix Z, bool max)
 {
 	int i, j, flag;
 
@@ -67,41 +77,52 @@ void find_optimum(Matrix A, Matrix b, int **combinations, int vars, int eqs, int
 	double z;
 
 	Matrix basic(vars, 1);
+
 	for(i = 0; i < sols; i++)
 	{	
 		flag = 0;
-		for(j = 0; j < 2; j++)
-			cout<<combinations[i][j]<<"\t";
-		cout<<endl;
+
 		basic = solve(A, b, vars, eqs, combinations[i]).copy();
 		basic.readjust();
-		basic.display_matrix();
+		cout << endl << "Solution is " << endl;
+		basic.transpose().display_matrix();
+
 		for(j = 0; j < vars; j++)
 			if(basic.mat[j][0] < 0) flag = 1;
 		
-		if(flag) continue;
+		if(flag)
+		{
+			cout << "Not a feasible solution" << endl;
+			continue;
+		}	
 		else
 		{
-			cout << "Basic feasible solution found"<<endl;
-			Z.multiply(basic).display_matrix();
-			cout << "Z is ";
+			cout << "Basic feasible solution found" << endl;
+			z = Z.multiply(basic).mat[0][0];
+			if(z > max_z) max_z = z;
+			if(z < min_z) min_z = z;
+
+			cout << "Value of Z is " << z << endl;
 		}
 
 
 	}
+	if(max)
+		cout << endl << "Max value of Z is " << max_z << endl;
+	else
+		cout << endl << "Min value of Z is " << min_z << endl; 
 }
 int main()
 {
-    int vars, eqs, i, j;
+    int vars, eqs, i, j, flag;
     double max_z, min_z;
     double *optimal_sol;
     cout<<"Enter number of variables"<<endl;
     cin>> vars;
-    cout<<" Enter number of equations"<<endl;
+    cout<<"Enter number of equations"<<endl;
     cin>> eqs;
 
     Matrix A(eqs, vars);
-    Matrix b(eqs, 1);
     Matrix Z(1, vars);
     Matrix A_square(vars, vars);
     Matrix b_big(vars, 1);
@@ -110,9 +131,26 @@ int main()
     A.read_matrix();
     cout <<"Matrix A :-"<<endl;
     A.display_matrix();
+    flag = 0;
 
+    while(A.rank() != eqs)
+    {
+    	flag = 1;
+    	cout << "Rank is less than the number of equations" << endl;
+    	cout << "Check for linear dependency in constraints " << endl;
+    	eqs = A.rank();
+    	cout << "You should have " << eqs;
+    	cout << " independent equations " << endl;
+
+    	Matrix A(eqs, vars);
+    	cout << "Enter matrix A with independent equations" << endl;
+    	A.read_matrix();
+    }
+
+    Matrix b(eqs, 1);
     cout <<"Enter the data of matrix b"<<endl;
     b.read_matrix();
+    	
     cout <<"Matrix b :-"<<endl;
     b.display_matrix();
 
@@ -120,7 +158,9 @@ int main()
     Z.read_matrix();
     cout<< "Objective function is "<<endl;
     Z.display_matrix();
-
+    cout << "Enter 1 if it is a maximization problem else 0" << endl;
+    bool max_or_min;
+    cin >> max_or_min;
 
 
     for(i = 0; i < eqs; i++)
@@ -129,13 +169,13 @@ int main()
     	b_big.mat[i][0] = b.mat[i][0];
     }
 
-    int rank = eqs;
-    // int rank = A.rank();
-    // Set vars - rank variables to be 0
+    int rank = A.rank();
+    cout << endl << "Beginning Basic Feasible Solution Method . . ." <<endl;
+    cout << "We set " << vars - rank << " variables to be 0 at a time " <<endl;
     optimal_sol = new double[vars];
 
     int sols = factorial(vars) / (factorial(vars - rank) * factorial(rank));
-    cout << "Number of sols possible is " << sols <<endl;
+    cout << "Number of solutions possible is " << sols <<endl;
 
     int **combinations = new int*[sols];
     for(i = 0; i < sols; i++)
@@ -147,12 +187,7 @@ int main()
     int* data = new int[rank];
     combination(arr, data, 0, vars-1, 0, vars - rank, combinations);
 
-    for(i = 0; i < sols; i++)
-    {
-    	for(j = 0; j < (vars-rank); j++) cout << combinations[i][j] << "\t";
-    	cout << endl;	
-    }
-    find_optimum(A_square, b_big, combinations, vars, eqs, sols, Z);
+    find_optimum(A_square, b_big, combinations, vars, eqs, sols, Z, max_or_min);
 
 
 
