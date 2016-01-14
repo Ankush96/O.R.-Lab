@@ -1,42 +1,24 @@
-#include <iostream>
 #include <stdio.h>
-#include <vector>
+#include <iostream>
 #include <math.h>
+#include "matrix.h"
 
 using namespace std;
 
-class Matrix{
-public:
-
-    int rows;
-    int cols;
-    double** mat;
-
-    Matrix(int a=0, int b=0)
+Matrix::Matrix(int a=0, int b=0)
+{
+    rows = a;
+    cols = b;
+    mat = new double*[rows];
+    for(int i = 0; i < rows; ++i)
     {
-        rows = a;
-        cols = b;
-        mat = new double*[rows];
-        for(int i = 0; i < rows; ++i)
+        mat[i] = new double[cols];
+        for(int j = 0; j < cols; j++)
         {
-            mat[i] = new double[cols];
-            for(int j = 0; j < cols; j++)
-            {
-                mat[i][j] = 0;
-            }
+            mat[i][j] = 0;
         }
     }
-
-    void read_matrix(void);
-    void display_matrix(void);
-    Matrix transpose();
-    void rank(void);
-    double determinant();
-    Matrix inverse();
-    Matrix multiply(Matrix);
-
-};   
-
+}
 void Matrix::read_matrix()
 {
     for(int i = 0; i < rows; i++)
@@ -60,6 +42,17 @@ void Matrix::display_matrix()
         cout<<endl;
     }
     cout<<endl;
+}
+
+Matrix Matrix::copy()
+{
+    int i,j;
+    Matrix clone(rows, cols);
+    for (int i = 0; i < rows; ++i)
+    {
+        for (int j = 0; j < cols; ++j) clone.mat[i][j] = this->mat[i][j];
+    }
+    return clone;
 }
 
 Matrix Matrix::transpose()
@@ -180,29 +173,14 @@ Matrix Matrix::multiply(Matrix other)
     return product;
 }
 
-int main()
+Matrix Matrix::readjust()
 {
-    int vars, eqs;
-    cout<<"Enter number of variables"<<endl;
-    cin>> vars;
-    cout<<" Enter number of equations"<<endl;
-    cin>> eqs;
-
-    Matrix A(eqs, vars);
-    Matrix b(eqs, 1);
-
-    cout <<"Enter the data of matrix A"<<endl;
-    A.read_matrix();
-    cout <<"Matrix A"<<endl;
-    A.display_matrix();
-
-    cout <<"Enter the data of matrix b"<<endl;
-    b.read_matrix();
-    cout <<"Matrix b"<<endl;
-    b.display_matrix();
-    cout<<"Det of A is "<<A.determinant()<<endl;
-    cout << " Inverse * Self is "<< endl;
-    A.inverse().multiply(A).display_matrix();
-
-    return 0;
+    for(int i = 0; i < rows; i++)
+    {
+        for(int j = 0; j<cols; j++)
+        {
+            if(fabs(mat[i][j]) < 0.00001) mat[i][j] = 0;
+        }
+    }
+    return *this;
 }
