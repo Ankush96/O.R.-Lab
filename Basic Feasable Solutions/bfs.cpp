@@ -47,20 +47,65 @@ void combination(int *arr, int *data, int start, int end, int index, int r, int 
 //------------------------------------------------------------------
 //           Function to solve a system of equations of form AX =b             
 //-----------------------------------------------------------------
-Matrix solve(Matrix A, Matrix b, int vars, int eqs, int *zeros)
+Matrix solve(Matrix augmented, int vars, int eqs, int *zeros)
 {
-	Matrix a = A.copy();
-	int i,j;
+    int i,j;
+	Matrix a = augmented.copy();
 	for( i = eqs; i < vars; i++)
 		a.mat[i][zeros[i-eqs]-1] = 1;
-	if(fabs(a.determinant()) > 0.01)
-		return a.inverse().multiply(b);
-	else
-	{
-		Matrix res(vars, 1);
-		for( i = 0; i < vars; i++) res.mat[i][0] = -1;
-		return res;	
-	}
+    cout<<" After settng non-basic variables to 0"<<endl;
+    a.display_matrix();
+
+    int *leading_0s = a.row_reduced(a);
+    a.readjust();
+    cout<<"Row reduced basic is "<<endl;
+    a.display_matrix();
+
+
+    
+    Matrix res(vars, 1);
+    for(i = a.rows-1; i >= 0; i--)
+    {
+        if(leading_0s[i] == a.cols -1)
+        {
+            cout<< "Inconsistent System. No basic solution!" << endl;
+            Matrix res(vars, 1, -1);
+            return res;
+        }
+        if(i == a.rows) res.mat[i][0] = a.mat[i][a.cols-1];
+        else
+        {
+            double sum = 0;
+            for(j = i+1; j < a.cols - 1; j++) sum += res.mat[j][0]*a.mat[i][j];
+            res.mat[i][0] = a.mat[i][a.cols-1] - sum;
+        }
+
+    }
+
+	return res;	
+}
+
+
+//------------------------------------------------------------------
+//           Function to remove linear dependency and return
+//           a row reduced echelon form of the augmented equation    
+//-----------------------------------------------------------------
+Matrix remove_linear_dependency(Matrix A, Matrix b)
+{
+    cout <<" A is "<<endl;
+    A.display_matrix();
+    cout <<" b is "<<endl;
+    b.display_matrix();
+    
+    Matrix augmented = A.horzcat(b);
+    cout << "augmented is"<<endl;
+    augmented.display_matrix();
+    int *leading_0s = A.row_reduced(augmented);
+    augmented.readjust();
+    cout<<"Row reduced augmented is "<<endl;
+    augmented.display_matrix();
+
+    return augmented; 
 }
 
 //------------------------------------------------------------------
@@ -68,7 +113,7 @@ Matrix solve(Matrix A, Matrix b, int vars, int eqs, int *zeros)
 //			 all non-feasible solutions and to finally obtain 
 //			 Basic Feasible solutions and find optimal solution             
 //-----------------------------------------------------------------
-void find_optimum(Matrix A, Matrix b, int **combinations, int vars, int eqs, int sols, Matrix Z, bool max)
+void find_optimum(Matrix augmented, int **combinations, int vars, int eqs, int sols, Matrix Z, bool max)
 {
 	int i, j, flag;
 
@@ -82,7 +127,7 @@ void find_optimum(Matrix A, Matrix b, int **combinations, int vars, int eqs, int
 	{	
 		flag = 0;
 
-		basic = solve(A, b, vars, eqs, combinations[i]).copy();
+		basic = solve(augmented, vars, eqs, combinations[i]).copy();
 		basic.readjust();
 		cout << endl << "Solution is " << endl;
 		basic.transpose().display_matrix();
@@ -114,7 +159,7 @@ void find_optimum(Matrix A, Matrix b, int **combinations, int vars, int eqs, int
 }
 int main()
 {
-    int vars, eqs, i, j, flag;
+    int vars, eqs, i, j;
     double max_z, min_z;
     double *optimal_sol;
     cout<<"Enter number of variables"<<endl;
@@ -131,26 +176,10 @@ int main()
     A.read_matrix();
     cout <<"Matrix A :-"<<endl;
     A.display_matrix();
-    flag = 0;
-
-    while(A.rank() != eqs)
-    {
-    	flag = 1;
-    	cout << "Rank is less than the number of equations" << endl;
-    	cout << "Check for linear dependency in constraints " << endl;
-    	eqs = A.rank();
-    	cout << "You should have " << eqs;
-    	cout << " independent equations " << endl;
-
-    	Matrix A(eqs, vars);
-    	cout << "Enter matrix A with independent equations" << endl;
-    	A.read_matrix();
-    }
 
     Matrix b(eqs, 1);
     cout <<"Enter the data of matrix b"<<endl;
-    b.read_matrix();
-    	
+    b.read_matrix();    	
     cout <<"Matrix b :-"<<endl;
     b.display_matrix();
 
@@ -158,10 +187,10 @@ int main()
     Z.read_matrix();
     cout<< "Objective function is "<<endl;
     Z.display_matrix();
+
     cout << "Enter 1 if it is a maximization problem else 0" << endl;
     bool max_or_min;
     cin >> max_or_min;
-
 
     for(i = 0; i < eqs; i++)
     {
@@ -169,7 +198,22 @@ int main()
     	b_big.mat[i][0] = b.mat[i][0];
     }
 
-    int rank = A.rank();
+
+    Matrix augmented = remove_linear_dependency(A_square, b_big);
+    int *leading_0s = new int[augmented.rows];
+    augmented.update_leading_0s(leading_0s, augmented);
+
+    int rank = 0;
+    for(i = 0; i < augmented.rows; i++)
+    {
+        if(leading_0s[i] == augmented.cols -1)
+        {
+            cout<< "Inconsistent System. Aborting !" << endl;
+            return -1;
+        }
+        if(leading_0s[i] != augmented.cols) ++rank;
+    }
+
     cout << endl << "Beginning Basic Feasible Solution Method . . ." <<endl;
     cout << "We set " << vars - rank << " variables to be 0 at a time " <<endl;
     optimal_sol = new double[vars];
@@ -187,7 +231,7 @@ int main()
     int* data = new int[rank];
     combination(arr, data, 0, vars-1, 0, vars - rank, combinations);
 
-    find_optimum(A_square, b_big, combinations, vars, eqs, sols, Z, max_or_min);
+    find_optimum(augmented, combinations, vars, rank, sols, Z, max_or_min);
 
 
 

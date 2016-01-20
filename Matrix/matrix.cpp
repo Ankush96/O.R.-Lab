@@ -9,7 +9,7 @@ using namespace std;
 //------------------------------------------------------------------
 //           Constructor for the matrix class             
 //-----------------------------------------------------------------
-Matrix::Matrix(int a=0, int b=0)
+Matrix::Matrix(int a=0, int b=0, int val)
 {
     rows = a;
     cols = b;
@@ -19,7 +19,7 @@ Matrix::Matrix(int a=0, int b=0)
         mat[i] = new double[cols];
         for(int j = 0; j < cols; j++)
         {
-            mat[i][j] = 0;
+            mat[i][j] = val;
         }
     }
 }
@@ -84,6 +84,29 @@ Matrix Matrix::transpose()
     }
     return result;
 }
+//------------------------------------------------------------------
+//           Function to concatenate a matrix horizontally            
+//-----------------------------------------------------------------
+Matrix Matrix::horzcat(Matrix b)
+{
+    Matrix result(rows, this->cols + b.cols);
+    int i, j;
+    for(i = 0; i < this->rows; i++)
+    {
+        for(j = 0; j < this->cols; j++)
+        {
+            result.mat[i][j] = this->mat[i][j];            
+        }
+    }
+    for(i = 0; i < this->rows; i++)
+    {
+        for(j = 0; j < b.cols; j++)
+        {
+            result.mat[i][cols+j]  = b.mat[i][j] ;
+        }
+    }
+    return result;
+}
 
 //------------------------------------------------------------------
 //           Function to find the first non-zero element              
@@ -140,17 +163,18 @@ void Matrix::scale_A(int *leading_0s, Matrix a)
     double divisor;
     for(i = 0; i < a.rows; ++i)
     {  
+        if(leading_0s[i] == a.cols) continue;
         divisor = a.mat[i][leading_0s[i]];
         for(j = leading_0s[i]; j < a.cols; ++j)   a.mat[i][j] = a.mat[i][j]/ divisor;
     }
 }
 
-//------------------------------------------------------------------
-//           Function to find trank of a matrix             
-//-----------------------------------------------------------------
-int Matrix::rank()
+
+//---------------------------------------------------------------------------
+//           Function definition to convert to row reduced form                               
+//---------------------------------------------------------------------------
+int* Matrix::row_reduced(Matrix a)
 {
-    Matrix a = this->copy();
     int i, next_row = 1, grp, p, r, j, *leading_0s, t, m, rank;
     leading_0s = new int[a.rows];
 
@@ -160,7 +184,7 @@ int Matrix::rank()
     if(fabs(a.mat[0][0]) < 0.00001)
     {
         cout << "Not a valid matrix as pivot element is 0" << endl;
-        return -1; 
+        return NULL; 
     }
 
     update_leading_0s(leading_0s, a);
@@ -186,15 +210,15 @@ int Matrix::rank()
                     grp--;
                 }
                 break;
-                }
-            }   
+            }
+        }   
 
         update_leading_0s(leading_0s, a);
         pivot_rearrange(leading_0s, a);
         update_leading_0s(leading_0s, a);
         scale_A(leading_0s, a);
 
-        next_row=0;
+        next_row = 0;
 
         for(r = 0; r < a.rows ; ++r)
         {
@@ -205,8 +229,18 @@ int Matrix::rank()
         }
 
     }
-    rank = 0;
-    for (i = 0; i < a.rows; ++i)
+    return leading_0s;
+}
+
+//------------------------------------------------------------------
+//           Function to find trank of a matrix             
+//-----------------------------------------------------------------
+int Matrix::rank()
+{
+    Matrix a = this->copy();
+    int *leading_0s = row_reduced(a);
+    int rank = 0;
+    for (int i = 0; i < a.rows; ++i)
     {
         if (leading_0s[i] != a.cols)  ++rank;
     }
