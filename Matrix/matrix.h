@@ -18,6 +18,7 @@ public:
     Matrix multiply(Matrix);
     Matrix readjust();
     Matrix horzcat(Matrix);
+    Matrix vertcat(Matrix);
     void scale_A(int *, Matrix);
     void pivot_rearrange(int *, Matrix);
     void update_leading_0s(int *, Matrix);

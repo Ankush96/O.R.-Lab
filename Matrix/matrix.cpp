@@ -370,3 +370,27 @@ Matrix Matrix::readjust()
     }
     return *this;
 }
+
+//------------------------------------------------------------------
+//           Function to concatenate a matrix vertically           
+//-----------------------------------------------------------------
+Matrix Matrix::vertcat(Matrix b)
+{
+    Matrix result(this->rows + b.rows, this->cols);
+    int i, j;
+    for(i = 0; i < this->rows; i++)
+    {
+        for(j = 0; j < this->cols; j++)
+        {
+            result.mat[i][j] = this->mat[i][j];            
+        }
+    }
+    for(i = 0; i < b.rows; i++)
+    {
+        for(j = 0; j < b.cols; j++)
+        {
+            result.mat[i+this->rows][j]  = b.mat[i][j] ;
+        }
+    }
+    return result;
+}
