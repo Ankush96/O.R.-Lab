@@ -114,6 +114,11 @@ void find_optimum(Matrix augmented, int **combinations, int vars, int extra_vars
         // cout << " Go to next solution ? " <<endl;
         // cin >> j;
 		flag = 0;
+        cout << "---------------------------------------------------\n\nSetting \t"<<endl;
+        for(j = 0; j < vars-eqs; j++)
+        {
+            cout << "x" <<combinations[i][j] <<" = 0 "<<endl;
+        }
 
 		basic = solve(augmented, vars, eqs, combinations[i]).copy();
 		basic.readjust();
@@ -155,11 +160,15 @@ void find_optimum(Matrix augmented, int **combinations, int vars, int extra_vars
 
 
 	}
+    cout <<"====================================================" <<endl;
 	if(max)
 		cout << endl << "Max value of Z is " << max_z << endl;
 	else
 		cout << endl << "Min value of Z is " << min_z << endl; 
+    
+    cout <<"====================================================" <<endl;
 }
+
 int main()
 {
     int vars, eqs, i, j;
