@@ -53,16 +53,10 @@ Matrix solve(Matrix augmented, int vars, int eqs, int *zeros)
 	Matrix a = augmented.copy();
 	for( i = eqs; i < vars; i++)
 		a.mat[i][zeros[i-eqs]-1] = 1;
-    cout<<" After settng non-basic variables to 0"<<endl;
-    a.display_matrix();
 
     int *leading_0s = a.row_reduced(a);
     a.readjust();
-    cout<<"Row reduced basic is "<<endl;
-    a.display_matrix();
 
-
-    
     Matrix res(vars, 1);
     for(i = a.rows-1; i >= 0; i--)
     {
@@ -92,18 +86,9 @@ Matrix solve(Matrix augmented, int vars, int eqs, int *zeros)
 //-----------------------------------------------------------------
 Matrix remove_linear_dependency(Matrix A, Matrix b)
 {
-    cout <<" A is "<<endl;
-    A.display_matrix();
-    cout <<" b is "<<endl;
-    b.display_matrix();
-    
     Matrix augmented = A.horzcat(b);
-    cout << "augmented is"<<endl;
-    augmented.display_matrix();
     int *leading_0s = A.row_reduced(augmented);
     augmented.readjust();
-    cout<<"Row reduced augmented is "<<endl;
-    augmented.display_matrix();
 
     return augmented; 
 }
@@ -113,7 +98,8 @@ Matrix remove_linear_dependency(Matrix A, Matrix b)
 //			 all non-feasible solutions and to finally obtain 
 //			 Basic Feasible solutions and find optimal solution             
 //-----------------------------------------------------------------
-void find_optimum(Matrix augmented, int **combinations, int vars, int eqs, int sols, Matrix Z, bool max)
+void find_optimum(Matrix augmented, int **combinations, int vars, int extra_vars, 
+                    int eqs, int sols, Matrix Z, bool max, int* artificial_count)
 {
 	int i, j, flag;
 
@@ -125,6 +111,8 @@ void find_optimum(Matrix augmented, int **combinations, int vars, int eqs, int s
 
 	for(i = 0; i < sols; i++)
 	{	
+        // cout << " Go to next solution ? " <<endl;
+        // cin >> j;
 		flag = 0;
 
 		basic = solve(augmented, vars, eqs, combinations[i]).copy();
@@ -132,8 +120,23 @@ void find_optimum(Matrix augmented, int **combinations, int vars, int eqs, int s
 		cout << endl << "Solution is " << endl;
 		basic.transpose().display_matrix();
 
-		for(j = 0; j < vars; j++)
-			if(basic.mat[j][0] < 0) flag = 1;
+		for(j = 0; j < vars - extra_vars; j++)
+        {
+            if(basic.mat[j][0] < 0)
+            {
+                flag = 1;
+            }
+        }
+        for(j = vars - extra_vars; j < vars; j++)
+        {
+            if(basic.mat[j][0] < 0)   flag = 1;
+    
+            if(fabs(basic.mat[j][0] ) > 0.0001 && artificial_count[j - vars + extra_vars])
+            {
+                flag = 1;
+            }
+
+        }
 		
 		if(flag)
 		{
@@ -168,20 +171,9 @@ int main()
     cin>> eqs;
 
     Matrix A(eqs, vars);
-    Matrix Z(1, vars);
-    Matrix A_square(vars, vars);
-    Matrix b_big(vars, 1);
-
-    cout <<"Enter the data of matrix A"<<endl;
-    A.read_matrix();
-    cout <<"Matrix A :-"<<endl;
-    A.display_matrix();
-
     Matrix b(eqs, 1);
-    cout <<"Enter the data of matrix b"<<endl;
-    b.read_matrix();    	
-    cout <<"Matrix b :-"<<endl;
-    b.display_matrix();
+    Matrix rel(eqs, 1);
+    Matrix Z(1, vars);
 
     cout <<"Enter the coefficients of the "<<vars<<" variables in the objective function Z in order"<<endl;
     Z.read_matrix();
@@ -191,13 +183,79 @@ int main()
     cout << "Enter 1 if it is a maximization problem else 0" << endl;
     bool max_or_min;
     cin >> max_or_min;
+    cout <<"Enter the data of matrix A"<<endl;
+    A.read_matrix();
+    cout <<"Matrix A :-"<<endl;
+    A.display_matrix();
+
+    cout <<"Enter the data of matrix b"<<endl;
+    b.read_matrix();    	
+    cout <<"Matrix b :-"<<endl;
+    b.display_matrix();
+
+    cout << " For each of the "<< eqs <<" equations, specify the relation by -1 (<=), 0 (=) and 1 (>=)" <<endl;
+    int extra_vars = 0;
+    int *artificial_count = new int[eqs];
+    for(i = 0; i < eqs; i++)
+    {
+        Matrix tmp(1,1);
+        cin >> rel.mat[i][0];
+        if(fabs(rel.mat[i][0]+1) < 0.0001)
+        {
+            cout << "Adding slack variable" <<endl;
+            Matrix slack(eqs, 1);
+            slack.mat[i][0] = 1;
+            A = A.horzcat(slack);
+            Z = Z.horzcat(tmp);
+            A.display_matrix();
+            artificial_count[extra_vars ++] = 0;
+        }
+        else if(fabs(rel.mat[i][0]) < 0.0001)
+        {
+            cout << "Adding artificial variable" <<endl;
+            Matrix art(eqs, 1);
+            art.mat[i][0] = 1;
+            A = A.horzcat(art);
+            Z = Z.horzcat(tmp);
+            A.display_matrix();
+            artificial_count[extra_vars ++] = 1;
+        }
+        else if(fabs(rel.mat[i][0] - 1) < 0.0001)
+        {
+            cout << "Adding surplus and artificial variable" <<endl;
+            Matrix surplus(eqs, 1);
+            surplus.mat[i][0] = -1;
+            A = A.horzcat(surplus);
+            Z = Z.horzcat(tmp);
+            A.display_matrix();
+            artificial_count[extra_vars ++] = 0;
+            Matrix art(eqs, 1);
+            art.mat[i][0] = 1;
+            A = A.horzcat(art);
+            Z = Z.horzcat(tmp);
+            A.display_matrix();
+            artificial_count[extra_vars ++] = 1;
+        }
+    }
+
+    for(i = 0; i < A.rows; i++)
+    {
+        for(j = 0; j < vars; j++)
+        {
+            if(fabs(A.mat[i][j] - Z.mat[0][j]) > 0.0001)
+                break;
+        } 
+        if(j == vars)
+            cout << "Infinite solutions expected" << endl;
+    }
+    Matrix A_square(vars + extra_vars, vars + extra_vars);
+    Matrix b_big(vars + extra_vars, 1);
 
     for(i = 0; i < eqs; i++)
     {
-    	for(j = 0; j < vars; j++)	A_square.mat[i][j] = A.mat[i][j];
+    	for(j = 0; j < vars + extra_vars; j++) A_square.mat[i][j] = A.mat[i][j];
     	b_big.mat[i][0] = b.mat[i][0];
     }
-
 
     Matrix augmented = remove_linear_dependency(A_square, b_big);
     int *leading_0s = new int[augmented.rows];
@@ -215,23 +273,23 @@ int main()
     }
 
     cout << endl << "Beginning Basic Feasible Solution Method . . ." <<endl;
-    cout << "We set " << vars - rank << " variables to be 0 at a time " <<endl;
-    optimal_sol = new double[vars];
+    cout << "We set " << vars + extra_vars- rank << " variables to be 0 at a time " <<endl;
+    optimal_sol = new double[vars + extra_vars];
 
-    int sols = factorial(vars) / (factorial(vars - rank) * factorial(rank));
+    int sols = factorial(vars + extra_vars) / (factorial(vars + extra_vars - rank) * factorial(rank));
     cout << "Number of solutions possible is " << sols <<endl;
 
     int **combinations = new int*[sols];
     for(i = 0; i < sols; i++)
-    	combinations[i] = new int[vars - rank];
+    	combinations[i] = new int[vars + extra_vars - rank];
 
-    int *arr = new int[vars];
-    for(i = 0; i < vars; i++) arr[i] = i+1;
+    int *arr = new int[vars + extra_vars];
+    for(i = 0; i < vars + extra_vars; i++) arr[i] = i+1;
 
     int* data = new int[rank];
-    combination(arr, data, 0, vars-1, 0, vars - rank, combinations);
+    combination(arr, data, 0, vars + extra_vars-1, 0, vars+extra_vars - rank, combinations);
 
-    find_optimum(augmented, combinations, vars, rank, sols, Z, max_or_min);
+    find_optimum(augmented, combinations, vars + extra_vars, extra_vars, rank, sols, Z, max_or_min,artificial_count);
 
 
 
