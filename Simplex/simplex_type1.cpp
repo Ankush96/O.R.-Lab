@@ -6,6 +6,37 @@
 
 using namespace std;
 
+void simplex(Matrix Tableau, Matrix non_basic_vars, Matrix basic_vars)
+{
+    int i,j;
+    int most_negative = 0;
+    int pivot_row = 0;
+    double least = 0;
+    for( j = 0; j < Tableau.cols - 1; j++)
+    {
+        if(Tableau.mat[Tableau.rows - 1][j] <  least)
+        {
+            least = Tableau.mat[Tableau.rows - 1][j];
+            most_negative = j;
+        }
+    }
+
+    double min_ratio = std::numeric_limits<double>::max();
+    for(i = 0; i < Tableau.rows-1; i++)
+    {
+        if(fabs(Tableau.mat[i][most_negative]) > 0.0001)
+        {
+            double ratio = Tableau.mat[i][Tableau.cols-1] / Tableau.mat[i][most_negative];
+            if(ratio < min_ratio)
+            {
+                min_ratio = ratio;
+                pivot_row = i; 
+            }  
+        }
+    }
+    cout << "Pivot element is " << Tableau.mat[pivot_row][most_negative] <<" at ";
+    cout <<pivot_row << " " << most_negative <<endl;
+}
 
 int main()
 {
@@ -110,4 +141,6 @@ int main()
     for(i = 0; i < eqs; i++)    basic_vars.mat[i][0] = i+1;    
     cout <<"Basic variables" <<endl;
     basic_vars.display_matrix();
+
+    simplex(init_tableau, non_basic_vars, basic_vars);
 }
