@@ -7,7 +7,7 @@ using namespace std;
 
 Matrix poi_inverse(Matrix Binv, Matrix c, int r)
 {
-	Matrix e = Binv.multiply(c);
+	c = Binv.multiply(c).copy();
 	double pivot = c.mat[r][0];
 	int vars = Binv.rows;
 	Matrix E(vars,vars);
@@ -22,7 +22,7 @@ Matrix poi_inverse(Matrix Binv, Matrix c, int r)
             c.mat[r][0] = 1.0 / pivot;  
         E.mat[i][r] = c.mat[i][0];
     }
-    return E.multiply(Binv);
+    return E.multiply(Binv).copy();
 }
 
 int main()
@@ -199,7 +199,7 @@ int main()
 	    cout << "New B is" <<endl;
 	    B.display_matrix();
 
-	    Binv = poi_inverse(Binv, P[entering], leaving - vars);
+	    Binv = poi_inverse(Binv.copy(), P[entering].copy(), leaving - vars);
 	    cout << "New inverse calculated is" <<endl;
 	    Binv.display_matrix();
 
