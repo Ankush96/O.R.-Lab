@@ -324,10 +324,7 @@ Matrix Matrix::inverse()
                 }
             }
             cofdet = cof.determinant();
-
             inv.mat[i][j] = (fabs(cofdet) < 0.1 ? 0 : sign) * cofdet / det;
-
-
         }
     }
     return inv.transpose();
@@ -365,7 +362,7 @@ Matrix Matrix::readjust()
     {
         for(int j = 0; j<cols; j++)
         {
-            if(fabs(mat[i][j]) < 0.00001) mat[i][j] = 0;
+            if(fabs(mat[i][j]) < 1e-5) mat[i][j] = 0;
         }
     }
     return *this;
